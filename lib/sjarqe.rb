@@ -12,85 +12,95 @@ CLOSED_SYLLABLE_FREQUENCY = 4
 LONGER_WORDS_FREQUENCY = 7
 
 def generate_text_from_structure structure
-  $assimilations = load_rules 'assimilation_rules'
-  $palatalizations = load_rules 'palatalizations'
-  $palatalizers = load_rules 'palatalizers'
-  $cons_rhyme = load_rules 'consonant_rhyme'
+  assimilations = load_rules 'assimilation_rules'
+  palatalizations = load_rules 'palatalizations'
+  palatalizers = load_rules 'palatalizers'
+  cons_rhyme = load_rules 'consonant_rhyme'
 
-  structure[:structure].each do |i|
-    i == :line ? puts : print_lines(structure[i])
-  end
-end
+  structure[:structure].each do |text_block|
+    if text_block == :line
+      puts
+    else
+      # map line type to the last two rhyme-forming vowels in the line
+      rhymes = {}
+      structure[text_block].each do |line_type|
+        rhyme_key = line_type.scan(/[a-z]/).join.to_sym
+        rhymes[rhyme_key] ||= { :c2 => get_letter(CONSONANTS), :v2 => get_letter(VOWELS), :c1 => get_letter(CONSONANTS), :v1 => get_letter(VOWELS) }
+        #puts rhymes[rhyme_key]
 
-# %w(a10 b8 a10 b8)
-def print_lines struct
-  # map line type to the last two rhyme-forming vowels in the line
-  rhymes = {}
-  struct.each do |i|
-    rhyme_key = i.scan(/[a-z]/).join.to_sym
-    rhymes[rhyme_key] ||= { :c2 => get_letter(CONSONANTS), :v2 => get_letter(VOWELS), :c1 => get_letter(CONSONANTS), :v1 => get_letter(VOWELS) }
-    #puts rhymes[rhyme_key]
-    line = generate_line i.scan(/\d+/).join.to_i, rhymes[rhyme_key]
-    puts line
-  end
+        vowel_count = line_type.scan(/\d+/).join.to_i
+        rhyme = rhymes[rhyme_key]
 
-end
+        line = []
 
-# returns last letter added to the current word; if none found returns ''
-def get_last_added_letter line
-  line[-1].nil? || line[-1]  == ' ' || line[-1].strip.size == 0 ? '' : line[-1].strip
-end
+        #vowel counter
+        i = 0
 
-def generate_line vowel_count, rhyme
-  line = []
+        # to avoid consonant clusters at word start
+        word_start = true
 
-  #vowel counter
-  i = 0
+        cons_sequence = 0
+        vowels_in_last_word = 0
 
-  # to avoid consonant clusters at word start
-  word_start = true
+        while i < vowel_count
 
-  cons_sequence = 0
-  vowels_in_last_word = 0
+          if (word_start && cons_sequence == 0) || (!word_start && cons_sequence < MAX_CONSONANT_SEQUENCE)
+            consonant = (vowel_count - i) <= 2 ? cons_rhyme[rhyme["c#{(vowel_count - i)}".to_sym].to_s].split.sample : get_letter(CONSONANTS)
+            line << consonant.to_s
+            cons_sequence += 1
+            word_start = false
+          end
 
-  while i < vowel_count
+          vowel = vowel_count - i <= 2 ? rhyme["v#{vowel_count - i}".to_sym] : get_letter(VOWELS)
 
-    if (word_start && cons_sequence == 0) || (!word_start && cons_sequence < MAX_CONSONANT_SEQUENCE)
-      consonant = (vowel_count - i) <= 2 ? $cons_rhyme[rhyme["c#{(vowel_count - i)}".to_sym].to_s].split.sample : get_letter(CONSONANTS)
-      line << consonant.to_s
-      cons_sequence += 1
-      word_start = false
+          i += 1
+          vowels_in_last_word += 1
+
+          line << vowel.to_s
+
+          cons_sequence = 0
+          word_start = false
+
+          # inserting a whitespace
+          # tune word length: the first part (before ||) is for max syllable count,
+          # the second part is for probability of inserting a whitespace (the greater the value the shorter the words)
+          # also here we make sure no words with no vowels appear
+          if (vowels_in_last_word >= MAX_VOWEL_COUNT || (rand(10) > LONGER_WORDS_FREQUENCY && vowels_in_last_word >= MIN_VOWEL_COUNT)) && i < vowel_count
+            line << ' '
+            vowels_in_last_word = 0
+            cons_sequence = 0
+            word_start = true
+          end
+
+          # closed syllables are still needed, but not many
+          if rand(10) > CLOSED_SYLLABLE_FREQUENCY && ((word_start && cons_sequence == 0) || (!word_start && cons_sequence < MAX_CONSONANT_SEQUENCE))
+            line << get_letter(CONSONANTS).to_s
+            cons_sequence += 1
+          end
+        end
+
+        # apply assimilations & palatalizations
+        (0...line.size).each do |i|
+          if line[i + 1] && line[i + 1].strip != ''
+            key = "#{line[i]}|#{line[i + 1]}"
+            while assimilations[key]
+              rule = assimilations[key].split('|')
+              line[i] = rule[0]
+              line[i + 1] = rule[1]
+              key = "#{line[i]}|#{line[i + 1]}"
+            end
+
+            if palatalizations[line[i]] && palatalizers[line[i + 1]]
+              line[i] = palatalizations[line[i]]
+              line[i + 1] = palatalizers[line[i + 1]]
+            end
+          end
+        end
+
+        puts line.join
+      end
     end
-
-    vowel = vowel_count - i <= 2 ? rhyme["v#{vowel_count - i}".to_sym] : get_letter(VOWELS)
-
-    i += 1
-    vowels_in_last_word += 1
-
-    line << vowel.to_s
-
-    cons_sequence = 0
-    word_start = false
-
-    # inserting a whitespace
-    # tune word length: the first part (before ||) is for max syllable count,
-    # the second part is for probability of inserting a whitespace (the greater the value the shorter the words)
-    # also here we make sure no words with no vowels appear
-    if (vowels_in_last_word >= MAX_VOWEL_COUNT || (rand(10) > LONGER_WORDS_FREQUENCY && vowels_in_last_word >= MIN_VOWEL_COUNT)) && i < vowel_count
-      line << ' '
-      vowels_in_last_word = 0
-      cons_sequence = 0
-      word_start = true
-    end
-
-    # closed syllables are still needed, but not many
-    if rand(10) > CLOSED_SYLLABLE_FREQUENCY && ((word_start && cons_sequence == 0) || (!word_start && cons_sequence < MAX_CONSONANT_SEQUENCE))
-      line << get_letter(CONSONANTS).to_s
-      cons_sequence += 1
-    end
   end
-
-  apply_assimilations(line).join
 end
 
 def get_letter letters
@@ -98,28 +108,6 @@ def get_letter letters
     random_letter = letters.keys.sample
   end
   random_letter
-end
-
-def apply_assimilations line
-
-  (0...line.size).each do |i|
-    if line[i + 1] && line[i + 1].strip != ''
-      key = "#{line[i]}|#{line[i + 1]}"
-      while $assimilations[key]
-        rule = $assimilations[key].split('|')
-        line[i] = rule[0]
-        line[i + 1] = rule[1]
-        key = "#{line[i]}|#{line[i + 1]}"
-      end
-
-      if $palatalizations[line[i]] && $palatalizers[line[i + 1]]
-        line[i] = $palatalizations[line[i]]
-        line[i + 1] = $palatalizers[line[i + 1]]
-      end
-    end
-  end
-
-  line
 end
 
 def load_rules file
@@ -134,7 +122,3 @@ def load_rules file
 end
 
 generate_text_from_structure STRUCTURE
-
-#20.times { puts get_letter CONSONANTS }
-
-#puts load_rules 'assimilation_rules'
