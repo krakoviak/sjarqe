@@ -1,14 +1,17 @@
 VOWEL = {:nil => 5, :a => 6, :ya => 3, :e => 5, :ye => 2, :u => 6, :i => 3, :o => 7, :yo => 2, :aa => 0, :ee => 0, :uu => 0, :ii => 0, :oo => 0, :ai => 3, :ei => 3, :yei => 1, :oi => 2, :ou => 2, :au => 2}
 CONSONANT = {:nil => 5, :y => 4, :q => 4, :kh => 4, :w => 3, :r => 7, :R => 5, :t => 7, :p => 6, :s => 8, :d => 8, :f => 3, :g => 4, :x => 4, :k => 6, :l => 6, :z => 7, :v => 6, :b => 3, :n => 5, :m => 5, :sj => 4, :dj => 4, :ch => 4, :th => 6, :dh => 6, :j => 2, :ts => 5, :dz => 5}
 
-TEXT = {:verse => %w(a4 a4 a4 a4), :structure => [:verse, :line, :verse]}
+#TEXT = {:verse => %w(a4), :structure => [:verse]}
+#TEXT = {:verse => %w(a5 a5 a5 a5), :structure => [:verse, :line, :verse]}
+TEXT = {:verse => %w(a7 b5 a7 b5), :structure => [:verse, :line, :verse]}
+#TEXT = {:verse => %w(a2 a2 a2 a2), :structure => [:verse, :line, :verse]}
 #TEXT = {:verse => %w(a4 b4 a4 b4), :structure => [:verse]}
 #TEXT = {:verse => %w(a4 b4 a4 b4), :chorus => %w(a6 a6 b6 b6 c4 c4), :structure => [:verse, :line, :chorus]}
 
-MAX_CONSONANT_SEQUENCE = 2
+MAX_CONSONANT_SEQUENCE = 4
 MAX_VOWEL_COUNT = 2
 MIN_VOWEL_COUNT = 1
-CLOSED_SYLLABLE_FREQUENCY = 4
+CLOSED_SYLLABLE_FREQUENCY = 5
 LONGER_WORDS_FREQUENCY = 7
 
 def generate structure
@@ -44,8 +47,9 @@ def generate structure
 
         while i < vowel_count
 
-          if (word_start && cons_sequence == 0) || (!word_start && cons_sequence < MAX_CONSONANT_SEQUENCE)
-            consonant = (vowel_count - i) <= 2 ? cons_rhyme[rhyme["c#{(vowel_count - i)}".to_sym].to_s].split.sample : get(CONSONANT)
+          if (word_start && cons_sequence == 0) || (cons_sequence < MAX_CONSONANT_SEQUENCE && !word_start)
+            consonant = (vowel_count - i) < 3 ? cons_rhyme[rhyme["c#{(vowel_count - i)}".to_sym].to_s].split.sample : get(CONSONANT)
+            #puts "before: #{consonant}"
             line << consonant.to_s
             cons_sequence += 1
             word_start = false
@@ -74,7 +78,7 @@ def generate structure
 
           # closed syllables are still needed, but not many
           if rand(10) > CLOSED_SYLLABLE_FREQUENCY && ((word_start && cons_sequence == 0) || (!word_start && cons_sequence < MAX_CONSONANT_SEQUENCE))
-            line << get(CONSONANT).to_s
+            line << ((vowel_count - i) < 2 && (vowel_count - i) > 0 ? cons_rhyme[rhyme["c#{(vowel_count - i + 1)}".to_sym].to_s].split.sample : get(CONSONANT)).to_s
             cons_sequence += 1
           end
         end
