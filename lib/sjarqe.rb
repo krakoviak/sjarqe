@@ -1,9 +1,9 @@
-VOWELS = {:nil => 5, :a => 6, :ya => 3, :e => 5, :ye => 2, :u => 6, :i => 3, :o => 7, :yo => 2, :aa => 0, :ee => 0, :uu => 0, :ii => 0, :oo => 0, :ai => 3, :ei => 3, :yei => 1, :oi => 2, :ou => 2, :au => 2}
-CONSONANTS = {:nil => 5, :y => 4, :q => 4, :kh => 4, :w => 3, :r => 7, :R => 5, :t => 7, :p => 6, :s => 8, :d => 8, :f => 3, :g => 4, :x => 4, :k => 6, :l => 6, :z => 7, :v => 6, :b => 3, :n => 5, :m => 5, :sj => 4, :dj => 4, :ch => 4, :th => 6, :dh => 6, :j => 2, :ts => 5, :dz => 5}
+VOWEL = {:nil => 5, :a => 6, :ya => 3, :e => 5, :ye => 2, :u => 6, :i => 3, :o => 7, :yo => 2, :aa => 0, :ee => 0, :uu => 0, :ii => 0, :oo => 0, :ai => 3, :ei => 3, :yei => 1, :oi => 2, :ou => 2, :au => 2}
+CONSONANT = {:nil => 5, :y => 4, :q => 4, :kh => 4, :w => 3, :r => 7, :R => 5, :t => 7, :p => 6, :s => 8, :d => 8, :f => 3, :g => 4, :x => 4, :k => 6, :l => 6, :z => 7, :v => 6, :b => 3, :n => 5, :m => 5, :sj => 4, :dj => 4, :ch => 4, :th => 6, :dh => 6, :j => 2, :ts => 5, :dz => 5}
 
-STRUCTURE = {:verse => %w(a7 a5 a7 a5), :structure => [:verse, :line, :verse]}
-#STRUCTURE = {:verse => %w(a4 b4 a4 b4), :structure => [:verse]}
-#STRUCTURE = {:verse => %w(a4 b4 a4 b4), :chorus => %w(a6 a6 b6 b6 c4 c4), :structure => [:verse, :line, :chorus]}
+TEXT = {:verse => %w(a4 a4 a4 a4), :structure => [:verse, :line, :verse]}
+#TEXT = {:verse => %w(a4 b4 a4 b4), :structure => [:verse]}
+#TEXT = {:verse => %w(a4 b4 a4 b4), :chorus => %w(a6 a6 b6 b6 c4 c4), :structure => [:verse, :line, :chorus]}
 
 MAX_CONSONANT_SEQUENCE = 2
 MAX_VOWEL_COUNT = 2
@@ -11,11 +11,11 @@ MIN_VOWEL_COUNT = 1
 CLOSED_SYLLABLE_FREQUENCY = 4
 LONGER_WORDS_FREQUENCY = 7
 
-def generate_text_from_structure structure
-  assimilations = load_rules 'assimilation_rules'
-  palatalizations = load_rules 'palatalizations'
-  palatalizers = load_rules 'palatalizers'
-  cons_rhyme = load_rules 'consonant_rhyme'
+def generate structure
+  assimilations = load 'assimilation_rules'
+  palatalizations = load 'palatalizations'
+  palatalizers = load 'palatalizers'
+  cons_rhyme = load 'consonant_rhyme'
 
   structure[:structure].each do |text_block|
     if text_block == :line
@@ -25,7 +25,7 @@ def generate_text_from_structure structure
       rhymes = {}
       structure[text_block].each do |line_type|
         rhyme_key = line_type.scan(/[a-z]/).join.to_sym
-        rhymes[rhyme_key] ||= { :c2 => get_letter(CONSONANTS), :v2 => get_letter(VOWELS), :c1 => get_letter(CONSONANTS), :v1 => get_letter(VOWELS) }
+        rhymes[rhyme_key] ||= { :c2 => get(CONSONANT), :v2 => get(VOWEL), :c1 => get(CONSONANT), :v1 => get(VOWEL) }
         #puts rhymes[rhyme_key]
 
         vowel_count = line_type.scan(/\d+/).join.to_i
@@ -45,13 +45,13 @@ def generate_text_from_structure structure
         while i < vowel_count
 
           if (word_start && cons_sequence == 0) || (!word_start && cons_sequence < MAX_CONSONANT_SEQUENCE)
-            consonant = (vowel_count - i) <= 2 ? cons_rhyme[rhyme["c#{(vowel_count - i)}".to_sym].to_s].split.sample : get_letter(CONSONANTS)
+            consonant = (vowel_count - i) <= 2 ? cons_rhyme[rhyme["c#{(vowel_count - i)}".to_sym].to_s].split.sample : get(CONSONANT)
             line << consonant.to_s
             cons_sequence += 1
             word_start = false
           end
 
-          vowel = vowel_count - i <= 2 ? rhyme["v#{vowel_count - i}".to_sym] : get_letter(VOWELS)
+          vowel = vowel_count - i <= 2 ? rhyme["v#{vowel_count - i}".to_sym] : get(VOWEL)
 
           i += 1
           vowels_in_last_word += 1
@@ -74,10 +74,12 @@ def generate_text_from_structure structure
 
           # closed syllables are still needed, but not many
           if rand(10) > CLOSED_SYLLABLE_FREQUENCY && ((word_start && cons_sequence == 0) || (!word_start && cons_sequence < MAX_CONSONANT_SEQUENCE))
-            line << get_letter(CONSONANTS).to_s
+            line << get(CONSONANT).to_s
             cons_sequence += 1
           end
         end
+
+        #puts line.join
 
         # apply assimilations & palatalizations
         (0...line.size).each do |i|
@@ -103,14 +105,14 @@ def generate_text_from_structure structure
   end
 end
 
-def get_letter letters
+def get letters
   until letters[random_letter = letters.keys.sample] > rand(10) && random_letter != :nil
     random_letter = letters.keys.sample
   end
   random_letter
 end
 
-def load_rules file
+def load file
   hash = {}
   IO.foreach("./#{file}") do |line|
     if line.strip[0] != '#' && line.include?('=>')
@@ -121,4 +123,4 @@ def load_rules file
   hash
 end
 
-generate_text_from_structure STRUCTURE
+generate TEXT
