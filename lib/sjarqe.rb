@@ -3,16 +3,16 @@ CONSONANT = {:nil => 5, :y => 4, :q => 4, :kh => 4, :w => 3, :r => 7, :R => 5, :
 
 #TEXT = {:verse => %w(a4), :structure => [:verse]}
 #TEXT = {:verse => %w(a5 a5 a5 a5), :structure => [:verse, :line, :verse]}
-TEXT = {:verse => %w(a7 b5 a7 b5), :structure => [:verse, :line, :verse]}
+TEXT = {:verse => %w(a7 b6 a7 b5), :structure => [:verse, :line, :verse]}
 #TEXT = {:verse => %w(a2 a2 a2 a2), :structure => [:verse, :line, :verse]}
 #TEXT = {:verse => %w(a4 b4 a4 b4), :structure => [:verse]}
 #TEXT = {:verse => %w(a4 b4 a4 b4), :chorus => %w(a6 a6 b6 b6 c4 c4), :structure => [:verse, :line, :chorus]}
 
 MAX_CONSONANT_SEQUENCE = 4
-MAX_VOWEL_COUNT = 2
-MIN_VOWEL_COUNT = 1
+MAX_VOWEL_COUNT = 3
+MIN_VOWEL_COUNT = 2
 CLOSED_SYLLABLE_FREQUENCY = 5
-LONGER_WORDS_FREQUENCY = 7
+LONGER_WORDS_FREQUENCY = 5
 
 def generate structure
   assimilations = load 'assimilation_rules'
@@ -86,21 +86,26 @@ def generate structure
         #puts line.join
 
         # apply assimilations & palatalizations
-        (0...line.size).each do |i|
-          if line[i + 1] && line[i + 1].strip != ''
-            key = "#{line[i]}|#{line[i + 1]}"
-            while assimilations[key]
-              rule = assimilations[key].split('|')
-              line[i] = rule[0]
-              line[i + 1] = rule[1]
+        2.times do
+          (0...line.size).each do |i|
+            if line[i + 1] && line[i + 1].strip != ''
               key = "#{line[i]}|#{line[i + 1]}"
-            end
+              while assimilations[key]
+                rule = assimilations[key].split('|')
+                line[i] = rule[0]
+                line[i + 1] = rule[1]
+                key = "#{line[i]}|#{line[i + 1]}"
+              end
 
-            if palatalizations[line[i]] && palatalizers[line[i + 1]]
-              line[i] = palatalizations[line[i]]
-              line[i + 1] = palatalizers[line[i + 1]]
+              if palatalizations[line[i]] && palatalizers[line[i + 1]]
+                line[i] = palatalizations[line[i]]
+                line[i + 1] = palatalizers[line[i + 1]]
+              end
             end
           end
+          #puts line.join
+          #line.reject! { |e| e == "" }
+          #puts line.join
         end
 
         puts line.join
