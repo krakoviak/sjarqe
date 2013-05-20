@@ -2,8 +2,8 @@ VOWEL = {:nil => 5, :a => 6, :ya => 3, :e => 5, :ye => 2, :u => 6, :i => 3, :o =
 CONSONANT = {:nil => 5, :y => 4, :q => 4, :kh => 4, :w => 3, :r => 7, :R => 5, :t => 7, :p => 6, :s => 8, :d => 8, :f => 3, :g => 4, :x => 4, :k => 6, :l => 6, :z => 7, :v => 6, :b => 3, :n => 5, :m => 5, :sj => 4, :dj => 4, :ch => 4, :th => 6, :dh => 6, :j => 2, :ts => 5, :dz => 5}
 
 #TEXT = {:verse => %w(a4), :structure => [:verse]}
-#TEXT = {:verse => %w(a5 a5 a5 a5), :structure => [:verse, :line, :verse]}
-TEXT = {:verse => %w(a7 b6 a7 b5), :structure => [:verse, :line, :verse]}
+TEXT = {:verse => %w(a5 a5 a5 a5), :structure => [:verse, :line, :verse]}
+#TEXT = {:verse => %w(a7 b6 a7 b5), :structure => [:verse, :line, :verse]}
 #TEXT = {:verse => %w(a2 a2 a2 a2), :structure => [:verse, :line, :verse]}
 #TEXT = {:verse => %w(a4 b4 a4 b4), :structure => [:verse]}
 #TEXT = {:verse => %w(a4 b4 a4 b4), :chorus => %w(a6 a6 b6 b6 c4 c4), :structure => [:verse, :line, :chorus]}
@@ -51,8 +51,6 @@ def generate structure
             consonant = (vowel_count - i) < 3 ? cons_rhyme[rhyme["c#{(vowel_count - i)}".to_sym].to_s].split.sample : get(CONSONANT)
             #puts "before: #{consonant}"
             line << consonant.to_s
-            cons_sequence += 1
-            word_start = false
           end
 
           vowel = vowel_count - i <= 2 ? rhyme["v#{vowel_count - i}".to_sym] : get(VOWEL)
@@ -77,7 +75,7 @@ def generate structure
           end
 
           # closed syllables are still needed, but not many
-          if rand(10) > CLOSED_SYLLABLE_FREQUENCY && ((word_start && cons_sequence == 0) || (!word_start && cons_sequence < MAX_CONSONANT_SEQUENCE))
+          if rand(10) > CLOSED_SYLLABLE_FREQUENCY && ((word_start && cons_sequence == 0) || (cons_sequence < MAX_CONSONANT_SEQUENCE && !word_start))
             line << ((vowel_count - i) < 2 && (vowel_count - i) > 0 ? cons_rhyme[rhyme["c#{(vowel_count - i + 1)}".to_sym].to_s].split.sample : get(CONSONANT)).to_s
             cons_sequence += 1
           end
@@ -87,6 +85,8 @@ def generate structure
 
         # apply assimilations & palatalizations
         2.times do
+          line.reject! { |e| e == '' }
+
           (0...line.size).each do |i|
             if line[i + 1] && line[i + 1].strip != ''
               key = "#{line[i]}|#{line[i + 1]}"
@@ -98,14 +98,14 @@ def generate structure
               end
 
               if palatalizations[line[i]] && palatalizers[line[i + 1]]
+                #puts line.join if line[i + 1] == 'y'
                 line[i] = palatalizations[line[i]]
                 line[i + 1] = palatalizers[line[i + 1]]
               end
             end
           end
-          #puts line.join
-          #line.reject! { |e| e == "" }
-          #puts line.join
+
+          line.reject! { |e| e == '' }
         end
 
         puts line.join
@@ -115,9 +115,7 @@ def generate structure
 end
 
 def get letters
-  until letters[random_letter = letters.keys.sample] > rand(10) && random_letter != :nil
-    random_letter = letters.keys.sample
-  end
+  random_letter = letters.keys.sample until random_letter && letters[random_letter] > rand(10) && random_letter != :nil
   random_letter
 end
 
