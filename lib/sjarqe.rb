@@ -2,8 +2,8 @@ VOWEL = {:nil => 5, :a => 6, :ya => 3, :e => 5, :ye => 2, :u => 6, :i => 3, :o =
 CONSONANT = {:nil => 5, :y => 4, :q => 4, :kh => 4, :w => 3, :r => 7, :R => 5, :t => 7, :p => 6, :s => 8, :d => 8, :f => 3, :g => 4, :x => 4, :k => 6, :l => 6, :z => 7, :v => 6, :b => 3, :n => 5, :m => 5, :sj => 4, :dj => 4, :ch => 4, :th => 6, :dh => 6, :j => 2, :ts => 5, :dz => 5}
 
 #TEXT = {:verse => %w(a4), :structure => [:verse]}
-TEXT = {:verse => %w(a5 a5 a5 a5), :structure => [:verse, :line, :verse]}
-#TEXT = {:verse => %w(a7 b6 a7 b5), :structure => [:verse, :line, :verse]}
+#TEXT = {:verse => %w(a5 a5 a5 a5), :structure => [:verse, :line, :verse]}
+TEXT = {:verse => %w(a6 b6 a6 b6), :structure => [:verse, :line, :verse]}
 #TEXT = {:verse => %w(a2 a2 a2 a2), :structure => [:verse, :line, :verse]}
 #TEXT = {:verse => %w(a4 b4 a4 b4), :structure => [:verse]}
 #TEXT = {:verse => %w(a4 b4 a4 b4), :chorus => %w(a6 a6 b6 b6 c4 c4), :structure => [:verse, :line, :chorus]}
@@ -88,21 +88,22 @@ def generate structure
           line.reject! { |e| e == '' }
 
           (0...line.size).each do |i|
-            if line[i + 1] && line[i + 1].strip != ''
-              key = "#{line[i]}|#{line[i + 1]}"
-              while assimilations[key]
-                rule = assimilations[key].split('|')
-                line[i] = rule[0]
-                line[i + 1] = rule[1]
-                key = "#{line[i]}|#{line[i + 1]}"
-              end
-
-              if palatalizations[line[i]] && palatalizers[line[i + 1]]
-                #puts line.join if line[i + 1] == 'y'
-                line[i] = palatalizations[line[i]]
-                line[i + 1] = palatalizers[line[i + 1]]
-              end
+            next_letter = line[i + 1] && line[i + 1].strip != '' ? line[i + 1] : ''
+            key = "#{line[i]}|#{next_letter}"
+            while assimilations[key]
+              #puts assimilations[key]
+              rule = assimilations[key].split('|')
+              line[i] = rule[0]
+              line[i + 1] = rule[1] unless next_letter == ''
+              key = "#{line[i]}|#{next_letter == '' ? '' : line[i + 1]}"
             end
+
+            if palatalizations[line[i]] && palatalizers[line[i + 1]]
+              #puts line.join if line[i + 1] == 'y'
+              line[i] = palatalizations[line[i]]
+              line[i + 1] = palatalizers[line[i + 1]]
+            end
+
           end
 
           line.reject! { |e| e == '' }
