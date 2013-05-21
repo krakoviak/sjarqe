@@ -90,12 +90,15 @@ def generate structure
           (0...line.size).each do |i|
             next_letter = line[i + 1] && line[i + 1].strip != '' ? line[i + 1] : ''
             key = "#{line[i]}|#{next_letter}"
-            while assimilations[key]
+            # to avoid infinite rule loops
+            tries_count = 0
+            while assimilations[key] && tries_count < 4
               #puts assimilations[key]
               rule = assimilations[key].split('|')
               line[i] = rule[0]
               line[i + 1] = rule[1] unless next_letter == ''
               key = "#{line[i]}|#{next_letter == '' ? '' : line[i + 1]}"
+              tries_count += 1
             end
 
             if palatalizations[line[i]] && palatalizers[line[i + 1]]
