@@ -126,7 +126,7 @@ def generate structure
 end
 
 def get letters
-  random_letter = letters.keys.sample until random_letter && letters[random_letter] > rand(10) && random_letter != :nil
+  random_letter = letters.keys.sample until random_letter && letters[random_letter] * 10.0 > rand(100) && random_letter != :nil
   random_letter
 end
 
