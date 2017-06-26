@@ -7,9 +7,9 @@ VOWELS = NIL_VOWEL.merge(SHORT_VOWELS).merge(LONG_VOWELS).merge(DIPHTONGS)
 
 CONSONANTS = {:nil => 9, :y => 4, :q => 4, :kh => 4, :w => 3, :r => 7, :R => 5, :t => 7, :p => 6, :s => 8, :d => 8, :f => 3, :g => 4, :x => 4, :k => 6, :l => 6, :z => 7, :v => 6, :b => 3, :n => 5, :m => 5, :sj => 4, :dj => 4, :ch => 4, :th => 6, :dh => 6, :j => 2, :ts => 5, :dz => 5}
 
-#TEXT = {:verse => %w(a4), :structure => [:verse]}
+TEXT = {:verse => %w(a5 a5 b5 b6 c5 c5 d5 d6), :chorus => %w(a4 a4 b5 a4 a4 b5), :structure => [:verse, :line, :chorus, :line, :verse, :line, :chorus]}
 #TEXT = {:verse => %w(a4 a4 a4 a4), :structure => [:verse, :line, :verse]}
-TEXT = {:verse => %w(a6 b6 a6 b6), :structure => [:verse, :line, :verse]}
+#TEXT = {:verse => %w(a6 b6 a6 b6), :structure => [:verse, :line, :verse]}
 #TEXT = {:verse => %w(a2 a2 a2 a2), :structure => [:verse, :line, :verse]}
 #TEXT = {:verse => %w(a4 b4 a4 b4), :structure => [:verse]}
 #TEXT = {:verse => %w(a4 b4 a4 b4), :chorus => %w(a6 a6 b6 b6 c4 c4), :structure => [:verse, :line, :chorus]}
@@ -146,7 +146,7 @@ end
 
 def load(file)
   hash = {}
-  IO.foreach("./#{file}") do |line|
+  IO.foreach(File.expand_path(File.dirname(__FILE__)) + "/#{file}") do |line|
     if line.strip[0] != '#' && line.include?('=>')
       rule = line.split('=>')
       hash[rule[0].strip] = rule[1].strip
