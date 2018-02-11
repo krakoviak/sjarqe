@@ -108,6 +108,10 @@ def apply_assimilations(line):
         line = remove_empty_chars(line)
 
 
+def get_rhyme_letter(rhyme_, vowel_or_consonant, current_syllable_number_, syllable_count_):
+    return rhyme_.get('%s%s' % (vowel_or_consonant[0], syllable_count_ - current_syllable_number_))
+
+
 def generate(structure):
     cons_rhyme = load('../lib/consonant_rhyme')
 
@@ -154,46 +158,50 @@ def generate(structure):
                 word_start = True
 
                 cons_sequence = 0
-                vowels_in_last_word = 0
+                vowels_in_current_word = 0
 
                 while current_syllable_number < syllable_count:
                     if (word_start and cons_sequence == 0) or (
-                                    cons_sequence < MAX_CONSONANT_SEQUENCE and not word_start):
+                            cons_sequence < MAX_CONSONANT_SEQUENCE and not word_start):
+                        # time to start rhyming?
                         if syllable_count - current_syllable_number < 3:
-                            try:
-                                consonant = random.choice(
-                                    cons_rhyme[rhyme['c%s' % (syllable_count - current_syllable_number)]].split())
-                            except KeyError:
-                                print
-                                raise
+                            rhyming_consonant = get_rhyme_letter(rhyme, 'consonant', current_syllable_number,
+                                                                 syllable_count)
+                            consonant = random.choice(
+                                cons_rhyme[rhyming_consonant].split())
                         else:
                             consonant = get_consonant()
                         # print "before: %s" % consonant
                         line.append(consonant)
 
-                    vowel = rhyme['v%s' % (
-                        syllable_count - current_syllable_number)] if syllable_count - current_syllable_number <= 2 else get_vowel()
+                    # time to start rhyming?
+                    if syllable_count - current_syllable_number <= 2:
+                        vowel = get_rhyme_letter(rhyme, 'vowel', current_syllable_number, syllable_count)
+                    else:
+                        vowel = get_vowel()
 
                     current_syllable_number += 1
-                    vowels_in_last_word += 1
+                    vowels_in_current_word += 1
 
                     line.append(vowel)
 
                     cons_sequence = 0
                     word_start = False
 
-                    # inserting a whitespace
+                    # FIXME: why is it done before doing the closed syllable?
+                    # inserting a whitespace (i.e. finishing the word)
                     # tune word length: the first part (before 'or') is for max syllable count,
-                    # the second part is for probability of inserting a whitespace (the greater the value the shorter the words)
-                    # also here we make sure no words with no vowels appear
-                    last_word_has_more_than_enough_vowels = vowels_in_last_word >= MAX_VOWEL_COUNT
+                    # the second part is for probability of inserting a whitespace
+                    # (the greater the value the shorter the words)
+                    # also here we make sure no words with no vowels appear (FIXME: why not?)
+                    current_word_has_more_than_enough_vowels = vowels_in_current_word >= MAX_VOWEL_COUNT
                     lets_make_a_longer_word = random.randrange(0, 10) > LONGER_WORDS_FREQUENCY
-                    last_word_has_at_least_the_minimum_vowels = vowels_in_last_word >= MIN_VOWEL_COUNT
-                    this_is_not_the_last_syllable = current_syllable_number < syllable_count
-                    if (last_word_has_more_than_enough_vowels or (
-                                lets_make_a_longer_word and last_word_has_at_least_the_minimum_vowels)) and this_is_not_the_last_syllable:
+                    current_word_has_at_least_the_minimum_vowels = vowels_in_current_word >= MIN_VOWEL_COUNT
+                    this_is_not_the_last_syllable_in_line = current_syllable_number < syllable_count
+                    if (current_word_has_more_than_enough_vowels or (
+                            lets_make_a_longer_word and current_word_has_at_least_the_minimum_vowels)) and this_is_not_the_last_syllable_in_line:
                         line.append(' ')
-                        vowels_in_last_word = 0
+                        vowels_in_current_word = 0
                         cons_sequence = 0
                         word_start = True
 
@@ -202,14 +210,14 @@ def generate(structure):
                     the_word_just_started_and_no_cluster_present = word_start and cons_sequence == 0
                     in_the_middle_of_word_and_current_cluster_not_too_long = cons_sequence < MAX_CONSONANT_SEQUENCE and not word_start
                     this_is_the_last_syllable = current_syllable_number == syllable_count
-                    the_rhyme_for_it_is_not_empty = rhyme.get("c%s" % (syllable_count - current_syllable_number))
+                    rhyming_consonant = get_rhyme_letter(rhyme, 'consonant', current_syllable_number, syllable_count)
+                    the_rhyme_for_it_is_not_empty = rhyming_consonant is not None and rhyming_consonant != ''
                     if (lets_make_a_closed_syllable and (
-                                the_word_just_started_and_no_cluster_present or in_the_middle_of_word_and_current_cluster_not_too_long) or (
-                                this_is_the_last_syllable and the_rhyme_for_it_is_not_empty)):
-
-                        if rhyme.get('c%s' % (syllable_count - current_syllable_number)):
+                            the_word_just_started_and_no_cluster_present or in_the_middle_of_word_and_current_cluster_not_too_long) or (
+                            this_is_the_last_syllable and the_rhyme_for_it_is_not_empty)):
+                        if rhyming_consonant:
                             add = random.choice(
-                                cons_rhyme[rhyme['c%s' % (syllable_count - current_syllable_number)]].split())
+                                cons_rhyme[rhyming_consonant].split())
                         elif syllable_count - current_syllable_number == 0:
                             add = ''
                         else:
