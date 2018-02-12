@@ -1,5 +1,7 @@
 from generator import *
 
+SILENT_CONSONANT = ''
+
 VOWELS = {
     # # empty vowel
     # '': 5,
@@ -12,12 +14,14 @@ VOWELS = {
 }
 
 CONSONANTS = {
-    '': 0, 'y': 4, 'q': 4, 'kh': 4, 'w': 3, 'r': 7, 'R': 5, 't': 7, 'p': 6, 's': 8, 'd': 8, 'f': 3, 'g': 4,
+    SILENT_CONSONANT: 0, 'y': 4, 'q': 4, 'kh': 4, 'w': 3, 'r': 7, 'R': 5, 't': 7, 'p': 6, 's': 8, 'd': 8, 'f': 3,
+    'g': 4,
     'x': 4, 'k': 6, 'l': 6, 'z': 7, 'v': 6, 'b': 3, 'n': 5, 'm': 5, 'sj': 4, 'dj': 4, 'ch': 4, 'th': 6,
     'dh': 6, 'j': 2, 'ts': 5, 'dz': 5
 }
 
-TEXT = {'verse': ['a4', 'b4', 'a4', 'b4'], 'structure': ['verse']}
+TEXT = {'verse': ['a6', 'a6', 'b6', 'b6'], 'structure': ['verse', 'line', 'verse', 'line', 'verse']}
+# TEXT = {'verse': ['a4', 'b4', 'a4', 'b4'], 'structure': ['verse']}
 
 MAX_CONSONANT_SEQUENCE = 4
 MAX_VOWEL_COUNT = 3
@@ -44,32 +48,35 @@ palatalizations = load('../lib/palatalizations')
 palatalizers = load('../lib/palatalizers')
 
 
+def get_consonant_rhyming_variant(consonant_, filter_existing_only=True):
+    variants = consonant_rhyme_map[consonant_].split()
+    if filter_existing_only:
+        variants = [v for v in variants if v in list(ALPHABET)]
+    return random.choice(variants)
+    pass
+
+
+# old versions:
+# def get_vowel():
+#     while True:
+#         random_letter = random.choice(VOWELS.keys())
+#         if VOWELS[random_letter] > random.randrange(0, 10):
+#             return random_letter
+#
+#
+# def get_consonant():
+#     while True:
+#         random_letter = random.choice(CONSONANTS.keys())
+#         if CONSONANTS[random_letter] > random.randrange(0, 10):
+#             return random_letter
+
+
 def get_vowel():
-    while True:
-        random_letter = random.choice(VOWELS.keys())
-        if VOWELS[random_letter] > random.randrange(0, 10):
-            return random_letter
+    return get_next(line_end, VOWELS.keys())
 
 
 def get_consonant():
-    while True:
-        random_letter = random.choice(CONSONANTS.keys())
-        if CONSONANTS[random_letter] > random.randrange(0, 10):
-            return random_letter
-
-
-# def get_vowel(last):
-#     while True:
-#         l = get_next(last)
-#         if l in VOWELS.keys():
-#             return l
-#
-#
-# def get_consonant(last):
-#     while True:
-#         l = get_next(last)
-#         if l in VOWELS.keys():
-#             return l
+    return get_next(line_end, CONSONANTS.keys())
 
 
 def remove_empty_chars(line):
@@ -77,9 +84,8 @@ def remove_empty_chars(line):
 
 
 def apply_assimilations(line):
+    line = remove_empty_chars(line)
     for _ in range(2):
-        line = remove_empty_chars(line)
-
         for i in range(len(line)):
             try:
                 next_letter = line[i + 1] or ''
@@ -99,17 +105,24 @@ def apply_assimilations(line):
                 else:
                     key = ''
                 tries_count += 1
-            try:
-                line[i] = palatalizations[line[i]]
-                line[i + 1] = palatalizers[line[i + 1]]
-            except IndexError:
-                # do nothing, the line is finished
-                pass
-            except KeyError:
-                # do nothing, no rule to palatalize
-                pass
+        line = remove_empty_chars(line)
+    return line
+
+
+def apply_palatalizations(line):
+    line = remove_empty_chars(line)
+    for _ in range(2):
+        for i in range(len(line)):
+            palatalization = palatalizations.get(line[i])
+            palatalizer = i + 1 < len(line) and palatalizers.get(line[i + 1])
+            if palatalization and palatalizer:
+                # randomize a bit
+                if random.choice([True, False]):
+                    line[i] = palatalization
+                    line[i + 1] = palatalizer
 
         line = remove_empty_chars(line)
+    return line
 
 
 def get_rhyme_letter(rhyme_, vowel_or_consonant, current_syllable_number_, syllable_count_):
@@ -127,11 +140,28 @@ def get_rhyme_letter(rhyme_, vowel_or_consonant, current_syllable_number_, sylla
         return None
     key = '%s%s' % (vowel_or_consonant[0], index)
     if key not in rhyme_:
+        # the closing consonant of the last syllable
         if key == 'c0':
-            rhyme_[key] = get_consonant() if random.randrange(0, 2) else ''
+            rhyme_[key] = get_consonant() if random.randrange(0, 2) else SILENT_CONSONANT
         else:
             rhyme_[key] = {'c': get_consonant, 'v': get_vowel}[vowel_or_consonant[0]]()
     return rhyme_[key]
+
+
+# FIXME: global!
+# whatever the line is currently ending, whether we are using bi- or trigrams
+# line_end = random.choice([k for k in distribution.keys() if k[1] == '_'])
+line_end = '_'
+
+
+def append_character_to_line(line, character):
+    # sometimes we get None, e.g. if distribution doesn't provide a consonant after a 'q'
+    if character:
+        line.append(character)
+        # FIXME: global!
+        global line_end
+        line_end = character
+        # line_end = (line_end + character)[-2:]
 
 
 def generate(structure):
@@ -160,9 +190,11 @@ def generate(structure):
                 syllable_count = int(''.join([ch for ch in line_type if ch.isdigit()]))
                 rhyme = rhymes[rhyme_key]
                 line = generate_line(rhyme, syllable_count)
-                apply_assimilations(line)
+                line = apply_assimilations(line)
+                line = apply_palatalizations(line)
 
-                print ''.join(line)
+                # print ''.join(line)
+                print ''.join(line)  # , line
 
 
 def generate_line(rhyme, syllable_count):
@@ -178,12 +210,11 @@ def generate_line(rhyme, syllable_count):
             # time to start rhyming?
             if syllable_count - current_syllable_number < 3:
                 rhyming_consonant = get_rhyme_letter(rhyme, 'consonant', current_syllable_number, syllable_count)
-                consonant = random.choice(
-                    consonant_rhyme_map[rhyming_consonant].split())
+                consonant = get_consonant_rhyming_variant(rhyming_consonant)
             else:
                 consonant = get_consonant()
             # print "before: %s" % consonant
-            line.append(consonant)
+            append_character_to_line(line, consonant)
 
         # time to start rhyming?
         if syllable_count - current_syllable_number <= 2:
@@ -194,7 +225,7 @@ def generate_line(rhyme, syllable_count):
         current_syllable_number += 1
         vowels_in_current_word += 1
 
-        line.append(vowel)
+        append_character_to_line(line, vowel)
 
         cons_sequence = 0
         word_start = False
@@ -211,7 +242,7 @@ def generate_line(rhyme, syllable_count):
         this_is_not_the_last_syllable_in_line = current_syllable_number < syllable_count
         if (current_word_has_more_than_enough_vowels or (
                 lets_make_a_longer_word and current_word_has_at_least_the_minimum_vowels)) and this_is_not_the_last_syllable_in_line:
-            line.append(' ')
+            append_character_to_line(line, ' ')
             vowels_in_current_word = 0
             cons_sequence = 0
             word_start = True
@@ -227,15 +258,19 @@ def generate_line(rhyme, syllable_count):
                 the_word_just_started_and_no_cluster_present or in_the_middle_of_word_and_current_cluster_not_too_long) or (
                 this_is_the_last_syllable and the_rhyme_for_it_is_not_empty)):
             if rhyming_consonant:
-                add = random.choice(
-                    consonant_rhyme_map[rhyming_consonant].split())
-            elif syllable_count - current_syllable_number == 0:
-                add = ''
+                add = get_consonant_rhyming_variant(rhyming_consonant)
+            # elif syllable_count - current_syllable_number == 0:
+            #     # FIXME: why???
+            #     add = SILENT_CONSONANT
             else:
                 add = get_consonant()
-            line.append(add)
+
+            append_character_to_line(line, add)
             cons_sequence += 1
     return line
 
 
 generate(TEXT)
+# l = ['d', 'o', 't', 'd', 'e', 'm']
+# l = apply_assimilations(l)
+# print l

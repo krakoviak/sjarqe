@@ -1,3 +1,5 @@
+import re
+
 ALPHABET = '_abcdefghijklmnopqrstuvwxyz'
 INITIAL = 'bigrams_with_this_initial'
 INITIAL_AND_FINAL = 'bigrams_with_this_initial_and_this_final'
@@ -80,9 +82,64 @@ def count_bigrams(text, d):
     return clean_results(d)
 
 
-# with open('./input_eng.txt') as f:
+def count_trigrams(text, d):
+    text = cleanup_text(text)
+    length = len(text)
+    # for i, ch in enumerate(text):
+    for i in range(len(text)):
+        one = text[i]
+        two_index = i + 1
+        if two_index == length:
+            # means there's not enough letters already
+            break
+        else:
+            two = text[two_index]
+        three_index = i + 2
+        if three_index == length:
+            three = '_'
+        else:
+            three = text[three_index]
+        one, two, three = map(symbol_to_alphabet_letter, [one, two, three])
+
+        recalculate(d, one + two, three)
+    return clean_results(d)
+
+
+def cleanup_text(text):
+    raw_words = text.split()
+    result = []
+    for raw in raw_words:
+        regex = re.compile('[^a-z]')
+        cleaned = regex.sub('', raw.lower()).strip()
+        if cleaned:
+            result.append(cleaned)
+        # else:
+        #     print 'what was left was no longer a word'
+    return ' '.join(result)
+
+
+def calculate_trigrams():
+    with open('/Users/kirill/code/input_eng.txt') as f:
+        result_dict = {}
+        for line in f.readlines():
+            result = count_trigrams(line, result_dict)
+
+        print result
+
+from trigram_distribution import distribution
+
+# print len(distribution.keys())
+
+# trigram_initials = {}
+# with open('/Users/kirill/code/input_eng.txt') as f:
 #     result_dict = {}
 #     for line in f.readlines():
-#         result = count_bigrams(line, result_dict)
-#
-#     print result
+
+# for k, v in distribution.items():
+#     if k[1] == '_' and '_' in v.keys():
+#         print k, [v_v for v_k, v_v in v.items() if v_k == '_']
+# print '-------------------------'
+# print len(distribution.keys())
+# for k, v in distribution.items():
+#     if k[1] == '_' and '_' in v.keys():
+#         print k, [v_v for v_k, v_v in v.items() if v_k == '_']
