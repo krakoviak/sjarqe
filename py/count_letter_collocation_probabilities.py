@@ -1,6 +1,8 @@
+# coding: utf-8
 import re
 
-ALPHABET = '_abcdefghijklmnopqrstuvwxyz'
+ALPHABET = u'_abcdefghijklmnñopqrstuvwxyzåäö'
+# ALPHABET = '_abcdefghijklmnopqrstuvwxyz'
 INITIAL = 'bigrams_with_this_initial'
 INITIAL_AND_FINAL = 'bigrams_with_this_initial_and_this_final'
 ROUND_TO = 4
@@ -119,13 +121,15 @@ def cleanup_text(text):
 
 
 def calculate_trigrams():
-    with open('/Users/kirill/code/input_eng.txt') as f:
+    with open('/Users/kirill/code/input_basque.txt') as f:
         result_dict = {}
         for line in f.readlines():
             result = count_trigrams(line, result_dict)
 
         print result
 
+
+# calculate_trigrams()
 from trigram_distribution import distribution
 
 # print len(distribution.keys())

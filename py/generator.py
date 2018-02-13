@@ -2,36 +2,37 @@ import random
 from copy import deepcopy
 from bigram_distribution import *
 from count_letter_collocation_probabilities import ALPHABET
-from trigram_distribution import distribution
+from trigram_distribution import basque  # distribution, finnish, basque
 
 
-def get_letter(probabilities):
-    """
-    {'a': 0.3333, 'b': 0.3333, 'c': 0.3333} should reliably return a, b, c with equal probability
-    """
-    while True:
-        random_letter = random.choice(probabilities.keys())
-        if probabilities[random_letter] > random.uniform(0, 1):
-            return random_letter
+class Generator(object):
+    def __init__(self, distribution_):
+        self.distribution = distribution_
 
+    def get_letter(self, probabilities):
+        """
+        {'a': 0.3333, 'b': 0.3333, 'c': 0.3333} should reliably return a, b, c with equal probability
+        """
+        while True:
+            random_letter = random.choice(probabilities.keys())
+            if probabilities[random_letter] > random.uniform(0, 1):
+                return random_letter
 
-def get_next(last, filter=None):
-    """
-    gets the next possible character based on distribution
-    :param last: last character in line
-    :param filter: None or list of acceptable characters
-    :return:
-    """
-    last = last.replace(' ', '_')
-    # distribution_ = deepcopy(distribution[last])
-    distribution_ = deepcopy(distribution_300k[last])
-    if filter:
-        distribution_ = {k: v for k, v in distribution_.items() if k in filter}
-    # e.g. if after 'q' a consonant is asked, we cannot do that
-    if not distribution_:
-        return
-    return get_letter(distribution_).replace('_', ' ')
-
+    def get_next(self, last, filter_=None):
+        """
+        gets the next possible character based on distribution
+        :param last: last character (or characters if using trigram distributions) in line
+        :param filter_: None or list of acceptable characters
+        :return:
+        """
+        last = last.replace(' ', '_')
+        distribution_ = deepcopy(self.distribution[last])
+        if filter_:
+            distribution_ = {k: v for k, v in distribution_.items() if k in filter_}
+        # e.g. if after 'q' a consonant is asked, we cannot do that
+        if not distribution_:
+            return
+        return self.get_letter(distribution_).replace('_', ' ')
 
 # print '15k:'
 # s = random.choice(ALPHABET)
