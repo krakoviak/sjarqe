@@ -1,6 +1,7 @@
+import random
 from collections import OrderedDict
 
-from sjarqe_base import *
+from sjarqe_base import SjarqeGenerator
 
 
 # TEXT = {'verse': ['a4', 'b4', 'a4', 'b4'], 'structure': ['verse']}

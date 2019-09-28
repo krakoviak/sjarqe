@@ -1,6 +1,6 @@
 import random
 from copy import deepcopy
-from bigram_distribution import *
+from bigram_distribution import distribution_15k, distribution_300k
 from count_letter_collocation_probabilities import ALPHABET
 from trigram_distribution import basque  # distribution, finnish, basque
 
@@ -14,7 +14,7 @@ class Generator(object):
         {'a': 0.3333, 'b': 0.3333, 'c': 0.3333} should reliably return a, b, c with equal probability
         """
         while True:
-            random_letter = random.choice(probabilities.keys())
+            random_letter = random.choice(list(probabilities.keys()))
             if probabilities[random_letter] > random.uniform(0, 1):
                 return random_letter
 

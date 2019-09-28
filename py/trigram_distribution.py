@@ -2092,5 +2092,5 @@ basque = {'t_': {'a': 0.0779, 'b': 0.1123, 'e': 0.2325, 'd': 0.0304, 'g': 0.0581
 
 # for k, v in distribution.items():
 #     if '_' in v.keys():
-#         print k, v
+#         print(k, v)
 

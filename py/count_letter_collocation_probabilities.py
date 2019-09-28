@@ -126,7 +126,7 @@ def calculate_trigrams():
         for line in f.readlines():
             result = count_trigrams(line, result_dict)
 
-        print result
+        print(result)
 
 
 # calculate_trigrams()

@@ -53,7 +53,10 @@ class SjarqeGenerator(object):
         self.line_end = random.choice([k for k in self.distribution.keys() if k[1] == '_'])
         # line_end = '_'
 
-        self.generate_line_method = None
+        # self.generate_line_method = None
+
+    def generate_line_method(self, rhyme, syllable_count):
+        return ""
 
     def get_consonant_rhyming_variant(self, consonant_, filter_existing_only=True):
         variants = self.consonant_rhyme_map[consonant_].split()
@@ -67,7 +70,7 @@ class SjarqeGenerator(object):
             line.append(character)
             # line_end = character
             self.line_end = (self.line_end + character)[-2:]
-            # print line_end
+            # print(line_end)
 
     def remove_empty_chars(self, line):
         return [ch for ch in line if ch != '']
@@ -85,7 +88,7 @@ class SjarqeGenerator(object):
                 # to avoid infinite rule loops
                 tries_count = 0
                 while key in self.assimilations and tries_count < 4:
-                    # print assimilations[key]
+                    # print(assimilations[key])
                     rule = self.assimilations[key].split('|')
                     line[i] = rule[0]
                     if next_letter:
@@ -124,7 +127,7 @@ class SjarqeGenerator(object):
         """
         for text_block in structure['structure']:
             if text_block == 'line':
-                print
+                print()
             else:
                 # maps the line type (e.g. 'a', 'b' etc. in 'a4', 'b7' etc.)
                 # to the last rhyme-forming vowels and consonants in the line
@@ -142,4 +145,4 @@ class SjarqeGenerator(object):
                     # line = apply_palatalizations(line)
 
                     # print ''.join(line)
-                    print ''.join(line)  # , line
+                    print(''.join(line))  # , line
