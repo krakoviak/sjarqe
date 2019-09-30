@@ -1,3 +1,5 @@
+#!/usr/local/bin/python3
+
 import random
 from collections import OrderedDict
 
