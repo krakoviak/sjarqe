@@ -4,6 +4,7 @@ import random
 from collections import OrderedDict
 
 from sjarqe_base import SjarqeGenerator
+from sjarqe_old import SjarqeLegacy
 
 
 # TEXT = {'verse': ['a4', 'b4', 'a4', 'b4'], 'structure': ['verse']}
@@ -69,6 +70,10 @@ class SjarqeNew(SjarqeGenerator):
 # l = apply_assimilations(l)
 # print l
 sg_new = SjarqeNew()
+# sg_new = SjarqeLegacy()
 
-TEXT = {'verse': ['a9', 'b9', 'a9', 'b9'], 'verse2': ['a9', 'b8', 'a9', 'b8'], 'structure': ['verse', 'line', 'verse2']}
+TEXT = {
+    'verse': ['a9', 'b9', 'a9', 'b9'],
+    'verse2': ['a9', 'b8', 'a9', 'b8'],
+    'structure': ['verse', 'line', 'verse2']}
 sg_new.generate(TEXT)

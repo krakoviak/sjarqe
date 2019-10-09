@@ -1,8 +1,10 @@
+import os
 import random
+
 
 from count_letter_collocation_probabilities import ALPHABET
 
-from trigram_distribution import *
+from trigram_distribution import distribution, finnish, basque
 
 from generator import Generator
 
@@ -30,8 +32,9 @@ class SjarqeGenerator(object):
     SILENT_CONSONANT = ''
 
     def load(self, file_path):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
         result = {}
-        with open('./' + file_path) as f:
+        with open(dir_path + '/' + file_path) as f:
             for line in f.readlines():
                 if line.strip() and line.strip()[0] != '#' and '=>' in line:
                     rule = line.split('=>')
