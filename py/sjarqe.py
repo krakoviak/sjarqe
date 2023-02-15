@@ -28,14 +28,14 @@ LONGER_WORDS_FREQUENCY = 5
 
 def get_vowel():
     while True:
-        random_letter = random.choice(VOWELS.keys())
+        random_letter = random.choice(list(VOWELS.keys()))
         if VOWELS[random_letter] > random.randrange(0, 10):
             return random_letter
 
 
 def get_consonant():
     while True:
-        random_letter = random.choice(CONSONANTS.keys())
+        random_letter = random.choice(list(CONSONANTS.keys()))
         if CONSONANTS[random_letter] > random.randrange(0, 10):
             return random_letter
 
@@ -122,7 +122,7 @@ def generate(structure):
     """
     for text_block in structure['structure']:
         if text_block == 'line':
-            print
+            print()
         else:
             # map line type to the last two rhyme-forming vowels in the line
             rhymes = {}
@@ -164,7 +164,7 @@ def generate(structure):
                                 consonant = random.choice(
                                     cons_rhyme[rhyme['c%s' % (syllable_count - current_syllable_number)]].split())
                             except KeyError:
-                                print
+                                print()
                                 raise
                         else:
                             consonant = get_consonant()
@@ -219,7 +219,7 @@ def generate(structure):
 
                 apply_assimilations(line)
 
-                print ''.join(line)
+                print(''.join(line))
 
 
 generate(TEXT)
